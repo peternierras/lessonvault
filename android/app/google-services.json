@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "748328539260",
+    "project_id": "lessonvault-ee31b",
+    "storage_bucket": "lessonvault-ee31b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:748328539260:android:a485883f4787567ff225f9",
+        "android_client_info": {
+          "package_name": "com.example.lessonvault"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvB-wk-HKzRlsYqYn50Gz8ei4FapM8hgE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
