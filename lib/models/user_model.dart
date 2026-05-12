@@ -19,8 +19,8 @@ class UserModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'uid': uid,
-      'displayName': displayName,
+      'id': uid,
+      'name': displayName,
       'email': email,
       'role': role.name,
     };
@@ -28,8 +28,8 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      uid: map['uid'] ?? '',
-      displayName: map['displayName'] ?? '',
+      uid: map['id'] ?? map['uid'] ?? '',
+      displayName: map['name'] ?? map['displayName'] ?? '',
       email: map['email'] ?? '',
       role: _parseRole(map['role']),
     );
@@ -39,13 +39,10 @@ class UserModel {
     switch (role) {
       case 'admin':
         return UserRole.admin;
-
       case 'instructor':
         return UserRole.instructor;
-
       case 'student':
         return UserRole.student;
-
       default:
         return UserRole.student;
     }

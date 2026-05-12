@@ -177,7 +177,7 @@ class _StudentClassroomCard extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => StudentClassroomScreen(classroom: classroom),
+            builder: (_) => Scaffold(),
           ),
         ),
         child: Padding(

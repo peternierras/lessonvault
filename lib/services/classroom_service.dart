@@ -1,37 +1,45 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:math';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/classroom_model.dart';
 
 class ClassroomService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Generates a random 6-character alphanumeric code
-  String _generateClassCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars like O, 0, I, 1
-    return List.generate(6, (index) => chars[Random().nextInt(chars.length)]).join();
+  Future<String?> createClassroom(ClassroomModel classroom) async {
+    try {
+      await _supabase.from('classrooms').insert(classroom.toMap());
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
   }
 
-  Future<ClassroomModel> createClassroom({
-    required String name,
-    required String description,
-    required String instructorId,
-    required String instructorName,
+  Future<String?> joinClassroom({
+    required String studentId,
+    required String classCode,
   }) async {
-    final classCode = _generateClassCode();
-    
-    final docRef = _db.collection('classrooms').doc();
-    
-    final classroom = ClassroomModel(
-      id: docRef.id,
-      name: name,
-      description: description,
-      instructorId: instructorId,
-      instructorName: instructorName,
-      classCode: classCode,
-      createdAt: DateTime.now(),
-    );
+    try {
+      final classroom = await _supabase
+          .from('classrooms')
+          .select()
+          .eq('class_code', classCode)
+          .maybeSingle();
 
-    await docRef.set(classroom.toMap());
-    return classroom;
+      if (classroom == null) {
+        return 'Classroom not found.';
+      }
+
+      // Enrollment logic can be added later.
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
   }
+
+  Stream<List<ClassroomModel>> getStudentClassrooms(String studentId) {
+  return _supabase
+      .from('classrooms')
+      .stream(primaryKey: ['id'])
+      .map((rows) => <ClassroomModel>[]);
+}
 }

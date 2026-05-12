@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
 import 'screens/auth/login_screen.dart';
@@ -11,10 +12,17 @@ import 'screens/student/student_dashboard_screen.dart';
 import 'models/user_model.dart';
 import 'utils/app_colors.dart';
 
-void main() async {
+final supabase = Supabase.instance.client;
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await NotificationService.initialize();
+
+  await Supabase.initialize(
+    url: 'https://ssrojisbnohdmiukvzoq.supabase.co',
+    anonKey:
+        'sb_publishable_c6uoRZcDLfKTrPETHU-Wug_BzMpqt6V',
+  );
+
   runApp(const LessonVaultApp());
 }
 
@@ -62,8 +70,10 @@ class LessonVaultApp extends StatelessWidget {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle:
+              GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -81,7 +91,8 @@ class LessonVaultApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -106,11 +117,22 @@ class AuthWrapper extends StatelessWidget {
     }
 
     switch (auth.currentUser!.role) {
-      case UserRole.admin:
-        return const AdminDashboard();
-      case UserRole.instructor:
-        return const InstructorDashboard();
-      case UserRole.student:
+      case 'admin':
+        return const Scaffold(
+          body: Center(
+            child: Text('Admin Dashboard'),
+          ),
+        );
+
+      case 'instructor':
+        return const Scaffold(
+          body: Center(
+            child: Text('Instructor Dashboard'),
+          ),
+        );
+
+      case 'student':
+      default:
         return const StudentDashboard();
     }
   }

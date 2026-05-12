@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/user_model.dart';
 
 class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   UserModel? _currentUser;
   bool _isLoading = true;
 
   UserModel? get currentUser => _currentUser;
-
   bool get isLoading => _isLoading;
 
   AuthService() {
@@ -20,26 +17,35 @@ class AuthService extends ChangeNotifier {
   }
 
   void _initializeAuthListener() {
-    _auth.authStateChanges().listen((User? firebaseUser) async {
-      if (firebaseUser != null) {
-        final doc =
-            await _firestore.collection('users').doc(firebaseUser.uid).get();
+    // Listen for login/logout events
+    _supabase.auth.onAuthStateChange.listen((data) async {
+      final session = data.session;
+      final user = session?.user;
 
-        if (doc.exists) {
-          _currentUser = UserModel.fromMap(doc.data()!);
+      if (user != null) {
+        try {
+          final profile = await _supabase
+              .from('profiles')
+              .select()
+              .eq('id', user.id)
+              .single();
+
+          _currentUser = UserModel.fromMap(profile);
+        } catch (e) {
+          // Profile not found or query failed
+          _currentUser = null;
         }
       } else {
         _currentUser = null;
       }
 
       _isLoading = false;
-
       notifyListeners();
     });
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    await _supabase.auth.signOut();
   }
 
   Future<String?> signIn({
@@ -47,13 +53,13 @@ class AuthService extends ChangeNotifier {
     required String password,
   }) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
       return null;
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       return e.message;
     } catch (e) {
       return e.toString();

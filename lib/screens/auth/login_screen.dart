@@ -27,14 +27,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     final auth = context.read<AuthService>();
+
     final error = await auth.signIn(
-      username: _usernameController.text,
+      email: _usernameController.text.trim(),
       password: _passwordController.text,
     );
 
