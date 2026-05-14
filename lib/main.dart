@@ -19,8 +19,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://ssrojisbnohdmiukvzoq.supabase.co',
-    anonKey:
-        'sb_publishable_c6uoRZcDLfKTrPETHU-Wug_BzMpqt6V',
+    anonKey: 'sb_publishable_c6uoRZcDLfKTrPETHU-Wug_BzMpqt6V',
   );
 
   runApp(const LessonVaultApp());
@@ -117,22 +116,13 @@ class AuthWrapper extends StatelessWidget {
     }
 
     switch (auth.currentUser!.role) {
-      case 'admin':
-        return const Scaffold(
-          body: Center(
-            child: Text('Admin Dashboard'),
-          ),
-        );
+      case UserRole.admin:
+        return const AdminDashboard();
 
-      case 'instructor':
-        return const Scaffold(
-          body: Center(
-            child: Text('Instructor Dashboard'),
-          ),
-        );
+      case UserRole.instructor:
+        return const InstructorDashboardScreen();
 
-      case 'student':
-      default:
+      case UserRole.student:
         return const StudentDashboard();
     }
   }

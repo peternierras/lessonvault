@@ -52,15 +52,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
               backgroundColor: AppColors.studentColor,
               icon: const Icon(Icons.add_circle_outline, color: Colors.white),
               label: const Text('Join Classroom',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w600)),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (i) => setState(() => _selectedIndex = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.class_outlined), label: 'My Classes'),
-          NavigationDestination(icon: Icon(Icons.campaign_outlined), label: 'Announcements'),
+          NavigationDestination(
+              icon: Icon(Icons.class_outlined), label: 'My Classes'),
+          NavigationDestination(
+              icon: Icon(Icons.campaign_outlined), label: 'Announcements'),
         ],
       ),
     );
@@ -82,7 +85,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
           if (dialogCtx.mounted) {
             if (error != null) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error), backgroundColor: AppColors.error),
+                SnackBar(
+                    content: Text(error), backgroundColor: AppColors.error),
               );
             } else {
               Navigator.pop(dialogCtx);
@@ -127,7 +131,8 @@ class _MyClassroomsTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.school_outlined, size: 64, color: AppColors.border),
+                  const Icon(Icons.school_outlined,
+                      size: 64, color: AppColors.border),
                   const SizedBox(height: 16),
                   const Text('No classrooms yet',
                       style: TextStyle(
@@ -138,7 +143,8 @@ class _MyClassroomsTab extends StatelessWidget {
                   const Text(
                     'Tap "Join Classroom" and enter the class code your instructor shared with you.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    style:
+                        TextStyle(color: AppColors.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
@@ -155,7 +161,8 @@ class _MyClassroomsTab extends StatelessWidget {
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: classrooms.length,
-          itemBuilder: (context, i) => _StudentClassroomCard(classroom: classrooms[i]),
+          itemBuilder: (context, i) =>
+              _StudentClassroomCard(classroom: classrooms[i]),
         );
       },
     );
@@ -164,20 +171,27 @@ class _MyClassroomsTab extends StatelessWidget {
 
 class _StudentClassroomCard extends StatelessWidget {
   final ClassroomModel classroom;
-  const _StudentClassroomCard({required this.classroom});
+
+  const _StudentClassroomCard({
+    required this.classroom,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       elevation: 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => Scaffold(),
+            builder: (_) => StudentClassroomScreen(
+              classroom: classroom,
+            ),
           ),
         ),
         child: Padding(
@@ -191,29 +205,40 @@ class _StudentClassroomCard extends StatelessWidget {
                   color: AppColors.studentColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.class_outlined,
-                    color: AppColors.studentColor, size: 24),
+                child: const Icon(
+                  Icons.class_outlined,
+                  color: AppColors.studentColor,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(classroom.name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: AppColors.textPrimary)),
+                    Text(
+                      classroom.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       classroom.instructorName,
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.border),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.border,
+              ),
             ],
           ),
         ),
@@ -295,7 +320,8 @@ class _JoinClassroomDialogState extends State<_JoinClassroomDialog> {
                   final code = widget.codeController.text.trim();
                   if (code.length < 6) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Code must be 6 characters')),
+                      const SnackBar(
+                          content: Text('Code must be 6 characters')),
                     );
                     return;
                   }
@@ -307,7 +333,8 @@ class _JoinClassroomDialogState extends State<_JoinClassroomDialog> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
               : const Text('Join'),
         ),
       ],
