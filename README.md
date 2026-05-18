@@ -3,158 +3,109 @@
 
 ## Overview
 
-LessonVault is a Flutter app with three user roles (Admin, Instructor, Student) backed by Firebase.
+LessonVault is a cross-platform educational application developed using Flutter for Android and Windows. It serves as a centralized repository for managing and distributing learning materials in college classrooms. The system enables instructors to upload course resources, post announcements, and organize classrooms by year level, while students can join classes using unique class codes and access instructional materials anytime and anywhere.
+
+The application uses :contentReference[oaicite:0]{index=0} as its backend for user authentication, PostgreSQL database management, cloud file storage, and real-time synchronization. LessonVault supports three user roles: Administrator, Instructor, and Student, each with role-based access and specific functionalities.
 
 ---
 
-## What's implemented (~40% of full system)
+## Key Features
 
-| Feature | Status |
-|---|---|
-| Login screen (username + password) | ✅ Complete |
-| Role-based routing (Admin / Instructor / Student) | ✅ Complete |
-| Firebase Auth + Firestore user profiles | ✅ Complete |
-| Instructor dashboard with classroom list | ✅ Complete |
-| Create classroom + auto-generate class code | ✅ Complete |
-| Classroom detail screen (materials tab) | ✅ Complete |
-| Upload material (PDF, PPTX, MP4) with progress | ✅ Complete |
-| Auto timestamp on each material upload | ✅ Complete |
-| Auto push notification trigger on upload (via Cloud Functions) | ✅ Complete |
-| Student dashboard with classroom list | ✅ Complete |
-| Student join classroom via class code | ✅ Complete |
-| Student view materials | ✅ Complete |
-| Admin overview dashboard | ✅ Complete |
-| FCM notification service (subscribe/unsubscribe) | ✅ Complete |
+### Authentication and User Roles
+- Secure login and registration
+- Role-based access control (Admin, Instructor, Student)
+- Automatic routing to role-specific dashboards
 
-**Remaining to build:**
-- Admin: full user management CRUD
-- Instructor/Admin: announcement posting UI
-- Material edit screen
-- Material download + open file
-- Notification history screen
-- Admin: system settings screen
+### Classroom Management
+- Create and manage classrooms
+- Automatically generate unique class codes
+- Organize classrooms into:
+  - 1st Year Classrooms
+  - 2nd Year Classrooms
+  - 3rd Year Classrooms
+  - 4th Year Classrooms
+- Students can join classrooms using class codes
+
+### Learning Material Repository
+- Upload course materials (PDF, PPTX, DOCX, MP4, and more)
+- Cloud-based file storage
+- Download and open materials on supported devices
+- Automatic upload timestamps
+
+### Announcements
+- Create classroom-specific announcements
+- Edit and delete announcements
+- Real-time updates for all enrolled students
+- Role-based permissions (only Admins and Instructors can manage announcements)
+
+### Notifications
+- Local notifications when new announcements are posted
+
+### Administrative Tools
+- View all classrooms
+- Monitor platform usage and data
 
 ---
 
-## Setup
+## Technology Stack
+
+### Frontend
+- :contentReference[oaicite:1]{index=1}
+- :contentReference[oaicite:2]{index=2}
+
+### Backend
+- :contentReference[oaicite:3]{index=3}
+  - Authentication
+  - PostgreSQL Database
+  - Storage
+  - Real-time Streams
+
+### State Management
+- :contentReference[oaicite:4]{index=4}
+
+### Additional Packages
+- :contentReference[oaicite:5]{index=5}
+- :contentReference[oaicite:6]{index=6}
+- :contentReference[oaicite:7]{index=7}
+- :contentReference[oaicite:8]{index=8}
+- :contentReference[oaicite:9]{index=9}
+- :contentReference[oaicite:10]{index=10}
+
+---
+
+## Supported Platforms
+
+- Android
+- Windows Desktop
+
+---
+
+## Current Implementation Status
+
+| Module | Status |
+|------|------|
+| Authentication | ✅ Complete |
+| Role-Based Dashboards | ✅ Complete |
+| Classroom Management | ✅ Complete |
+| Year-Level Categorization | ✅ Complete |
+| Material Upload and Download | ✅ Complete |
+| Announcements (Create/View/Edit/Delete) | ✅ Complete |
+| Local Notifications | ✅ Complete |
+| Windows Deployment | ✅ Complete |
+| Android Deployment | ✅ Complete |
+| Push Notifications (FCM) | ⏳ Planned |
+
+---
+
+## Installation
 
 ### Prerequisites
 - Flutter SDK 3.x
-- Firebase project (Blaze plan for Cloud Functions + Storage)
+- Android Studio
+- Visual Studio Community 2022 (Desktop development with C++)
+- Supabase project
 
-### 1. Create Firebase project
-1. Go to [console.firebase.google.com](https://console.firebase.google.com)
-2. Create a project
-3. Enable **Authentication** (Email/Password), **Firestore**, **Storage**, **Cloud Messaging**
-
-### 2. Add Firebase to the app
+### Clone the Repository
 ```bash
-dart pub global activate flutterfire_cli
-flutterfire configure
-```
-
-### 3. Firestore rules
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if request.auth.uid == userId || isAdmin();
-      allow write: if isAdmin();
-    }
-    match /classrooms/{classroomId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if isInstructor() || isAdmin();
-    }
-    match /materials/{materialId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if isInstructor() || isAdmin();
-    }
-    match /announcements/{id} {
-      allow read: if request.auth != null;
-      allow write: if isInstructor() || isAdmin();
-    }
-    match /notification_triggers/{id} {
-      allow create: if isInstructor() || isAdmin();
-      allow read, delete: if false; // Cloud Functions only
-    }
-
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    function isInstructor() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'instructor';
-    }
-  }
-}
-```
-
-### 4. Cloud Function (auto-notification on upload)
-In `/functions/index.js`:
-```javascript
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-admin.initializeApp();
-
-exports.sendMaterialNotification = functions.firestore
-  .document("notification_triggers/{triggerId}")
-  .onCreate(async (snap) => {
-    const { topic, title, body } = snap.data();
-    await admin.messaging().sendToTopic(topic, {
-      notification: { title, body },
-      data: { type: "new_material" },
-    });
-    await snap.ref.delete();
-  });
-```
-
-### 5. Create admin account
-In Firestore, create a document under `users/{uid}`:
-```json
-{
-  "username": "admin",
-  "email": "admin@yourdomain.com",
-  "role": "admin",
-  "fullName": "System Admin",
-  "createdAt": "<timestamp>",
-  "isActive": true
-}
-```
-
-### 6. Run the app
-```bash
-flutter pub get
-flutter run
-```
-
----
-
-## Project structure
-
-```
-lib/
-  main.dart              # Entry point, theme, AuthWrapper
-  models/
-    user_model.dart      # UserModel + UserRole enum
-    classroom_model.dart # ClassroomModel with classCode
-    material_model.dart  # MaterialModel with timestamps
-    announcement_model.dart
-  services/
-    auth_service.dart    # Firebase Auth + Firestore user profile
-    classroom_service.dart  # CRUD for classrooms, materials, announcements
-    storage_service.dart # Firebase Storage file uploads
-    notification_service.dart # FCM setup, topic subscribe/unsubscribe
-  screens/
-    auth/login_screen.dart
-    admin/admin_dashboard.dart
-    instructor/
-      instructor_dashboard.dart
-      create_classroom_screen.dart
-      classroom_detail_screen.dart
-      upload_material_screen.dart
-    student/
-      student_dashboard.dart
-      student_classroom_screen.dart
-  utils/
-    app_colors.dart      # Color palette + constants
-```
+git clone https://github.com/your-username/lessonvault.git
+cd lessonvault

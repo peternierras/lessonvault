@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/classroom_model.dart';
 import '../../models/material_model.dart';
+import '../../services/auth_service.dart';
 import '../../services/classroom_service.dart';
 import '../../services/storage_service.dart';
 
@@ -91,14 +93,12 @@ class MaterialsListScreen extends StatelessWidget {
         uri,
         mode: LaunchMode.externalApplication,
       );
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open the file.'),
-          ),
-        );
-      }
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the file.'),
+        ),
+      );
     }
   }
 
@@ -107,7 +107,8 @@ class MaterialsListScreen extends StatelessWidget {
     BuildContext context,
     MaterialModel material,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) {
             return AlertDialog(
@@ -143,10 +144,7 @@ class MaterialsListScreen extends StatelessWidget {
     final classroomService = ClassroomService();
 
     try {
-      // Delete file from Supabase Storage
       await storageService.deleteMaterial(material.fileUrl);
-
-      // Delete database record
       await classroomService.deleteMaterial(material.id);
 
       if (context.mounted) {
@@ -213,18 +211,33 @@ class MaterialsListScreen extends StatelessWidget {
               final material = materials[index];
               final fileColor = _getFileColor(material.fileUrl);
 
+              final currentUser =
+                  context.read<AuthService>().currentUser!;
+
+              // Normalize role to lowercase to handle
+              // "Admin", "ADMIN", and "admin".
+              final role =
+                  currentUser.role.name.toLowerCase();
+
+              final canDelete =
+                  role == 'admin' ||
+                  (role == 'instructor' &&
+                      material.uploadedBy == currentUser.uid);
+
               return Card(
                 elevation: 2,
                 child: ListTile(
                   leading: SizedBox(
                     width: 50,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor: fileColor.withOpacity(0.12),
+                          backgroundColor:
+                              fileColor.withOpacity(0.12),
                           child: Icon(
                             _getFileIcon(material.fileUrl),
                             color: fileColor,
@@ -247,18 +260,22 @@ class MaterialsListScreen extends StatelessWidget {
                   ),
                   title: Text(material.title),
                   subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       if (material.description.isNotEmpty)
                         Text(material.description),
                       const SizedBox(height: 4),
                       Text(
                         'Uploaded ${DateFormat.yMMMd().add_jm().format(material.createdAt)}',
-                        style: const TextStyle(fontSize: 12),
+                        style: const TextStyle(
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
-                  isThreeLine: material.description.isNotEmpty,
+                  isThreeLine:
+                      material.description.isNotEmpty,
                   trailing: PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'open') {
@@ -267,32 +284,49 @@ class MaterialsListScreen extends StatelessWidget {
                         _deleteMaterial(context, material);
                       }
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: 'open',
-                        child: ListTile(
-                          leading: Icon(Icons.open_in_new),
-                          title: Text('Open'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.delete,
-                            color: Colors.red,
+                    itemBuilder: (context) {
+                      final items =
+                          <PopupMenuEntry<String>>[
+                        const PopupMenuItem(
+                          value: 'open',
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.open_in_new,
+                            ),
+                            title: Text('Open'),
+                            contentPadding:
+                                EdgeInsets.zero,
                           ),
-                          title: Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          contentPadding: EdgeInsets.zero,
                         ),
-                      ),
-                    ],
+                      ];
+
+                      if (canDelete) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              title: Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
+                              ),
+                              contentPadding:
+                                  EdgeInsets.zero,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return items;
+                    },
                   ),
-                  onTap: () => _openMaterial(context, material),
+                  onTap: () =>
+                      _openMaterial(context, material),
                 ),
               );
             },

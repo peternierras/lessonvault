@@ -8,18 +8,25 @@ class CreateClassroomScreen extends StatefulWidget {
   const CreateClassroomScreen({super.key});
 
   @override
-  State<CreateClassroomScreen> createState() => _CreateClassroomScreenState();
+  State<CreateClassroomScreen> createState() =>
+      _CreateClassroomScreenState();
 }
 
-class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
+class _CreateClassroomScreenState
+    extends State<CreateClassroomScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _instructorIdController = TextEditingController();
-  final _instructorNameController = TextEditingController();
+  final _instructorNameController =
+      TextEditingController();
 
-  final ClassroomService _classroomService = ClassroomService();
+  final ClassroomService _classroomService =
+      ClassroomService();
+
+  // Default year level = 1st Year
+  int _selectedYearLevel = 1;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -42,11 +49,15 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
     });
 
     try {
-      final classroom = await _classroomService.createClassroom(
+      final classroom =
+          await _classroomService.createClassroom(
         name: _nameController.text.trim(),
         description: _descController.text.trim(),
-        instructorId: _instructorIdController.text.trim(),
-        instructorName: _instructorNameController.text.trim(),
+        instructorId:
+            _instructorIdController.text.trim(),
+        instructorName:
+            _instructorNameController.text.trim(),
+        yearLevel: _selectedYearLevel,
       );
 
       if (!mounted) return;
@@ -66,7 +77,8 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to create classroom. Please try again.';
+          _errorMessage =
+              'Failed to create classroom. Please try again.';
         });
       }
     } finally {
@@ -75,6 +87,21 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  String _getYearLabel(int year) {
+    switch (year) {
+      case 1:
+        return '1st Year';
+      case 2:
+        return '2nd Year';
+      case 3:
+        return '3rd Year';
+      case 4:
+        return '4th Year';
+      default:
+        return '$year Year';
     }
   }
 
@@ -89,7 +116,8 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               const Text(
                 'Classroom Details',
@@ -113,16 +141,51 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Classroom / Course Name',
-                  hintText: 'e.g. Introduction to Computer Science',
-                  prefixIcon: Icon(Icons.class_outlined),
+                  labelText:
+                      'Classroom / Course Name',
+                  hintText:
+                      'e.g. Introduction to Computer Science',
+                  prefixIcon:
+                      Icon(Icons.class_outlined),
                 ),
-                textCapitalization: TextCapitalization.words,
+                textCapitalization:
+                    TextCapitalization.words,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
                     return 'Enter a classroom name';
                   }
                   return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Year Level Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedYearLevel,
+                decoration: const InputDecoration(
+                  labelText: 'Year Level',
+                  prefixIcon:
+                      Icon(Icons.school_outlined),
+                ),
+                items: [1, 2, 3, 4]
+                    .map(
+                      (year) =>
+                          DropdownMenuItem<int>(
+                        value: year,
+                        child: Text(
+                          _getYearLabel(year),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedYearLevel = value;
+                    });
+                  }
                 },
               ),
 
@@ -133,9 +196,13 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
                 controller: _descController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                  hintText: 'Brief description of this course',
-                  prefixIcon: Icon(Icons.description_outlined),
+                  labelText:
+                      'Description (optional)',
+                  hintText:
+                      'Brief description of this course',
+                  prefixIcon: Icon(
+                    Icons.description_outlined,
+                  ),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -144,15 +211,21 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
 
               // Instructor UID
               TextFormField(
-                controller: _instructorIdController,
+                controller:
+                    _instructorIdController,
                 decoration: const InputDecoration(
-                  labelText: 'Instructor ID (UID)',
-                  hintText: 'Paste the instructor UID from Supabase Auth',
-                  prefixIcon: Icon(Icons.badge_outlined),
+                  labelText:
+                      'Instructor ID (UID)',
+                  hintText:
+                      'Paste the instructor UID from Supabase Auth',
+                  prefixIcon:
+                      Icon(Icons.badge_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter the instructor UID';
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return
+                        'Enter the instructor UID';
                   }
                   return null;
                 },
@@ -162,15 +235,21 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
 
               // Instructor Name
               TextFormField(
-                controller: _instructorNameController,
+                controller:
+                    _instructorNameController,
                 decoration: const InputDecoration(
-                  labelText: 'Instructor Name',
-                  prefixIcon: Icon(Icons.person_outline),
+                  labelText:
+                      'Instructor Name',
+                  prefixIcon:
+                      Icon(Icons.person_outline),
                 ),
-                textCapitalization: TextCapitalization.words,
+                textCapitalization:
+                    TextCapitalization.words,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter the instructor name';
+                  if (value == null ||
+                      value.trim().isEmpty) {
+                    return
+                        'Enter the instructor name';
                   }
                   return null;
                 },
@@ -180,10 +259,13 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
                 const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.error
+                        .withOpacity(0.08),
+                    borderRadius:
+                        BorderRadius.circular(10),
                   ),
                   child: Text(
                     _errorMessage!,
@@ -200,17 +282,21 @@ class _CreateClassroomScreenState extends State<CreateClassroomScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _createClassroom,
+                  onPressed:
+                      _isLoading ? null : _createClassroom,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(
+                          child:
+                              CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Create Classroom'),
+                      : const Text(
+                          'Create Classroom',
+                        ),
                 ),
               ),
             ],
@@ -234,9 +320,11 @@ class _ClassCodeDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
       ),
-      contentPadding: const EdgeInsets.all(28),
+      contentPadding:
+          const EdgeInsets.all(28),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -244,7 +332,8 @@ class _ClassCodeDialog extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.1),
+              color: AppColors.success
+                  .withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -283,13 +372,16 @@ class _ClassCodeDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 24,
               vertical: 14,
             ),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(12),
+              color:
+                  AppColors.primaryLight,
+              borderRadius:
+                  BorderRadius.circular(12),
             ),
             child: Text(
               classCode,
@@ -305,12 +397,16 @@ class _ClassCodeDialog extends StatelessWidget {
           TextButton.icon(
             onPressed: () {
               Clipboard.setData(
-                ClipboardData(text: classCode),
+                ClipboardData(
+                  text: classCode,
+                ),
               );
 
-              ScaffoldMessenger.of(context).showSnackBar(
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
                 const SnackBar(
-                  content: Text('Code copied!'),
+                  content:
+                      Text('Code copied!'),
                 ),
               );
             },
@@ -318,7 +414,9 @@ class _ClassCodeDialog extends StatelessWidget {
               Icons.copy_outlined,
               size: 16,
             ),
-            label: const Text('Copy Code'),
+            label: const Text(
+              'Copy Code',
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -333,7 +431,8 @@ class _ClassCodeDialog extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('Done'),
             ),
           ),

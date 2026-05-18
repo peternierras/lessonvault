@@ -22,6 +22,9 @@ Future<void> main() async {
     anonKey: 'sb_publishable_c6uoRZcDLfKTrPETHU-Wug_BzMpqt6V',
   );
 
+  // Initialize local notifications
+  await NotificationService.instance.initialize();
+
   runApp(const LessonVaultApp());
 }
 
@@ -51,13 +54,16 @@ class LessonVaultApp extends StatelessWidget {
       ),
       useMaterial3: true,
     );
+
     return base.copyWith(
       textTheme: GoogleFonts.poppinsTextTheme(base.textTheme),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.primary),
+        iconTheme: const IconThemeData(
+          color: AppColors.primary,
+        ),
         titleTextStyle: GoogleFonts.poppins(
           color: AppColors.textPrimary,
           fontSize: 18,
@@ -68,11 +74,17 @@ class LessonVaultApp extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle:
-              GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 14,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -80,24 +92,34 @@ class LessonVaultApp extends StatelessWidget {
         fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(
+            color: AppColors.border,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(
+            color: AppColors.border,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 2,
+          ),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
 }
 
-/// Listens to auth state and routes to the correct dashboard based on role.
+/// Listens to authentication state and routes the user
+/// to the appropriate dashboard based on role.
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -107,7 +129,9 @@ class AuthWrapper extends StatelessWidget {
 
     if (auth.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 

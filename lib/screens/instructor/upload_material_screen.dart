@@ -8,6 +8,7 @@ import '../../models/material_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/classroom_service.dart';
 import '../../services/storage_service.dart';
+import '../../services/notification_service.dart';
 import '../../utils/app_colors.dart';
 
 class UploadMaterialScreen extends StatefulWidget {
@@ -31,7 +32,6 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   final _storageService = StorageService();
   final _uuid = const Uuid();
 
-  // Changed from File? to PlatformFile?
   PlatformFile? _selectedFile;
   String? _selectedFileName;
 
@@ -40,8 +40,10 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
 
   /// Allowed file types:
   /// - PDF
-  /// - PowerPoint (PPT/PPTX)
-  /// - MP4 Video
+  /// - DOC/DOCX
+  /// - PPT/PPTX
+  /// - XLS/XLSX
+  /// - MP4
   static const List<String> _allowedExtensions = [
     // Documents
     'pdf',
@@ -70,7 +72,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   /// Opens the file picker and restricts selection to supported formats.
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
-      withData: true, // Required for Flutter Web
+      withData: true,
       type: FileType.custom,
       allowedExtensions: _allowedExtensions,
     );
@@ -82,7 +84,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
         _selectedFile = pickedFile;
         _selectedFileName = pickedFile.name;
 
-        // Auto-fill the title using the filename (without extension)
+        // Auto-fill title from filename if empty
         if (_titleController.text.trim().isEmpty) {
           final dotIndex = pickedFile.name.lastIndexOf('.');
           _titleController.text = dotIndex > 0
@@ -93,8 +95,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
     }
   }
 
-  /// Uploads the selected file to Supabase Storage
-  /// and saves the material metadata to the database.
+  /// Uploads the selected file and saves metadata to the database.
   Future<void> _upload() async {
     if (_selectedFile == null) {
       setState(() {
@@ -113,13 +114,13 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
     try {
       final user = context.read<AuthService>().currentUser!;
 
-      // Upload the file and get the public URL
+      // Upload file to Supabase Storage
       final fileUrl = await _storageService.uploadMaterial(
         file: _selectedFile!,
         classroomId: widget.classroom.id,
       );
 
-      // Create material metadata
+      // Create material model
       final material = MaterialModel(
         id: _uuid.v4(),
         classroomId: widget.classroom.id,
@@ -130,8 +131,15 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
         createdAt: DateTime.now(),
       );
 
-      // Save the material to the database
+      // Save material to database
       await _classroomService.addMaterial(material);
+
+      // Show local notification
+      await NotificationService.instance.showNotification(
+        title: 'New Material Uploaded',
+        body:
+            '${material.title} has been uploaded to ${widget.classroom.name}.',
+      );
 
       if (!mounted) return;
 
@@ -205,7 +213,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
 
               const SizedBox(height: 24),
 
-              // File picker area
+              // File picker
               GestureDetector(
                 onTap: _isUploading ? null : _pickFile,
                 child: Container(
@@ -328,7 +336,9 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Icon(Icons.upload),
                   label: Text(
