@@ -77,39 +77,97 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Creates a new user account and inserts a matching row
-  /// into the profiles table.
-  ///
-  /// NOTE:
-  /// This method requires that your project is configured to allow
-  /// creating users from the client. In production, this is typically
-  /// done through a secure server or Edge Function using the service role key.
   Future<String?> createUser({
     required String email,
     required String password,
     required String fullName,
     required String role,
+    int? yearLevel,
+    String? department,
   }) async {
     try {
-      // Create the authentication account
-      final response = await _supabase.auth.signUp(
-        email: email.trim(),
-        password: password,
+      final response = await _supabase.functions.invoke(
+        'create-user',
+        body: {
+          'email': email.trim(),
+          'password': password,
+          'full_name': fullName.trim(),
+          'role': role.toLowerCase(),
+          'year_level': role.toLowerCase() == 'student' ? yearLevel : null,
+          'department':
+              role.toLowerCase() == 'student' ? department?.trim() : null,
+        },
       );
 
-      final authUser = response.user;
-
-      if (authUser == null) {
-        return 'Failed to create user account.';
+      if (response.data == null || response.data['success'] != true) {
+        return response.data?['error'] ?? 'Failed to create user.';
       }
 
-      // Insert the corresponding profile record
-      await _supabase.from('profiles').upsert({
-        'id': authUser.id,
-        'email': email.trim(),
-        'name': fullName.trim(),
-        'role': role.toLowerCase(),
-      });
+      return null;
+    } on FunctionException catch (e) {
+      return e.toString();
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<String?> changePassword({
+    required String newPassword,
+  }) async {
+    try {
+      final user = _supabase.auth.currentUser;
+
+      if (user == null) {
+        return 'No authenticated user found.';
+      }
+
+      // 1. Update the password
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          password: newPassword,
+        ),
+      );
+
+      // 2. Update the profile flag
+      await _supabase.from('profiles').update({
+        'must_change_password': false,
+      }).eq('id', user.id);
+
+      // 3. Reload the profile from the database
+      final profile =
+          await _supabase.from('profiles').select().eq('id', user.id).single();
+
+      // Debug output
+      print('Updated profile after password change: $profile');
+
+      // 4. Update local user state
+      _currentUser = UserModel.fromMap(profile);
+
+      // Debug output
+      print('Role after password change: ${_currentUser?.role}');
+
+      // 5. Notify listeners so AuthWrapper rebuilds
+      _isLoading = false;
+      notifyListeners();
+
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// Sends a password reset email to the user.
+  Future<String?> sendPasswordResetEmail({
+    required String email,
+  }) async {
+    try {
+      await _supabase.auth.resetPasswordForEmail(
+        email.trim(),
+      );
 
       return null; // Success
     } on AuthException catch (e) {

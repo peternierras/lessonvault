@@ -23,33 +23,27 @@ class ClassroomService {
     final data = {
       'name': name,
       'description': description,
-      'instructor_id':
-          instructorId.trim().isEmpty ? null : instructorId,
+      'instructor_id': instructorId.trim().isEmpty ? null : instructorId,
       'instructor_name': instructorName,
       'class_code': classCode,
       'year_level': yearLevel,
     };
 
     // Insert and return the newly created row
-    final response = await _supabase
-        .from('classrooms')
-        .insert(data)
-        .select()
-        .single();
+    final response =
+        await _supabase.from('classrooms').insert(data).select().single();
 
     return ClassroomModel.fromMap(response);
   }
 
   /// Generates a random classroom code such as PA22YA.
   String _generateClassCode() {
-    const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
 
     return List.generate(
       6,
-      (_) => characters[
-          random.nextInt(characters.length)],
+      (_) => characters[random.nextInt(characters.length)],
     ).join();
   }
 
@@ -74,9 +68,7 @@ class ClassroomService {
       }
 
       // Insert enrollment record
-      await _supabase
-          .from('enrollments')
-          .insert({
+      await _supabase.from('enrollments').insert({
         'student_id': studentId,
         'classroom_id': classroom['id'],
       });
@@ -84,14 +76,8 @@ class ClassroomService {
       return null; // Success
     } catch (e) {
       // Prevent duplicate enrollment errors
-      if (e
-              .toString()
-              .toLowerCase()
-              .contains('duplicate') ||
-          e
-              .toString()
-              .toLowerCase()
-              .contains('unique')) {
+      if (e.toString().toLowerCase().contains('duplicate') ||
+          e.toString().toLowerCase().contains('unique')) {
         return 'You have already joined this classroom.';
       }
 
@@ -102,8 +88,7 @@ class ClassroomService {
   /// Returns all classrooms that a student has joined.
   /// Uses Supabase realtime instead of polling,
   /// so the UI no longer refreshes every 2 seconds.
-  Stream<List<ClassroomModel>>
-      getStudentClassrooms(String studentId) {
+  Stream<List<ClassroomModel>> getStudentClassrooms(String studentId) {
     return _supabase
         .from('enrollments')
         .stream(primaryKey: ['id'])
@@ -115,9 +100,8 @@ class ClassroomService {
           }
 
           // Extract classroom IDs
-          final classroomIds = enrollments
-              .map((e) => e['classroom_id'])
-              .toList();
+          final classroomIds =
+              enrollments.map((e) => e['classroom_id']).toList();
 
           // Fetch matching classrooms
           final classrooms = await _supabase
@@ -132,24 +116,19 @@ class ClassroomService {
           // Convert to ClassroomModel objects
           return classrooms
               .map<ClassroomModel>(
-                (row) =>
-                    ClassroomModel.fromMap(row),
+                (row) => ClassroomModel.fromMap(row),
               )
               .toList();
         });
   }
 
   /// Saves a material record to the database.
-  Future<void> addMaterial(
-      MaterialModel material) async {
-    await _supabase
-        .from('materials')
-        .insert(material.toMap());
+  Future<void> addMaterial(MaterialModel material) async {
+    await _supabase.from('materials').insert(material.toMap());
   }
 
   /// Retrieves all materials for a specific classroom in real time.
-  Stream<List<MaterialModel>> getMaterials(
-      String classroomId) {
+  Stream<List<MaterialModel>> getMaterials(String classroomId) {
     return _supabase
         .from('materials')
         .stream(primaryKey: ['id'])
@@ -161,19 +140,24 @@ class ClassroomService {
         .map(
           (rows) => rows
               .map(
-                (row) =>
-                    MaterialModel.fromMap(row),
+                (row) => MaterialModel.fromMap(row),
               )
               .toList(),
         );
   }
 
-  /// Deletes a material record from the database.
-  Future<void> deleteMaterial(
-      String materialId) async {
-    await _supabase
+  Future<void> deleteMaterial(String materialId) async {
+    final response = await _supabase
         .from('materials')
         .delete()
-        .eq('id', materialId);
+        .eq('id', materialId.toString())
+        .select();
+
+    // Verify that at least one row was deleted
+    if (response.isEmpty) {
+      throw Exception(
+        'No material was deleted. Check the material ID or RLS policies.',
+      );
+    }
   }
 }

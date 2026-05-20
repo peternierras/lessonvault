@@ -6,6 +6,7 @@ import 'admin_classrooms_screen.dart';
 import 'create_classroom_screen.dart';
 import 'view_users_screen.dart';
 import 'create_user_screen.dart';
+import 'account_requests_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -91,6 +92,23 @@ class AdminDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const ViewUsersScreen(),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Account Requests
+            _buildMenuButton(
+              context,
+              title: 'Account Requests',
+              icon: Icons.assignment,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AccountRequestsScreen(),
                   ),
                 );
               },

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/change_password_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/instructor/instructor_dashboard_screen.dart';
 import 'screens/student/student_dashboard_screen.dart';
@@ -119,7 +120,7 @@ class LessonVaultApp extends StatelessWidget {
 }
 
 /// Listens to authentication state and routes the user
-/// to the appropriate dashboard based on role.
+/// to the appropriate screen based on role and password status.
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -135,10 +136,17 @@ class AuthWrapper extends StatelessWidget {
       );
     }
 
+    // Not logged in
     if (auth.currentUser == null) {
       return const LoginScreen();
     }
 
+    // Force password change on first login
+    if (auth.currentUser!.mustChangePassword) {
+      return const ChangePasswordScreen();
+    }
+
+    // Route to dashboard based on role
     switch (auth.currentUser!.role) {
       case UserRole.admin:
         return const AdminDashboard();

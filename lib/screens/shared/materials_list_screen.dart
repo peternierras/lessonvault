@@ -81,24 +81,56 @@ class MaterialsListScreen extends StatelessWidget {
     return 'FILE';
   }
 
-  /// Opens the selected file.
+  //Open Material
   Future<void> _openMaterial(
     BuildContext context,
     MaterialModel material,
   ) async {
-    final uri = Uri.parse(material.fileUrl);
+    try {
+      final storageService = StorageService();
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
+      // Extract the extension from the file URL
+      final uri = Uri.parse(material.fileUrl);
+      final path = uri.path.toLowerCase();
+
+      String extension = '';
+
+      if (path.endsWith('.pdf'))
+        extension = '.pdf';
+      else if (path.endsWith('.ppt'))
+        extension = '.ppt';
+      else if (path.endsWith('.pptx'))
+        extension = '.pptx';
+      else if (path.endsWith('.doc'))
+        extension = '.doc';
+      else if (path.endsWith('.docx'))
+        extension = '.docx';
+      else if (path.endsWith('.xls'))
+        extension = '.xls';
+      else if (path.endsWith('.xlsx'))
+        extension = '.xlsx';
+      else if (path.endsWith('.mp4'))
+        extension = '.mp4';
+      else if (path.endsWith('.mov'))
+        extension = '.mov';
+      else if (path.endsWith('.avi')) extension = '.avi';
+
+      // Rebuild the filename with extension
+      final fileName = '${material.title}$extension';
+
+      // Download and open the file
+      await storageService.downloadAndOpenMaterial(
+        fileUrl: material.fileUrl,
+        fileName: fileName,
       );
-    } else if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open the file.'),
-        ),
-      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open the file: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -107,8 +139,7 @@ class MaterialsListScreen extends StatelessWidget {
     BuildContext context,
     MaterialModel material,
   ) async {
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) {
             return AlertDialog(
@@ -141,16 +172,28 @@ class MaterialsListScreen extends StatelessWidget {
     if (!confirmed) return;
 
     final storageService = StorageService();
-    final classroomService = ClassroomService();
 
     try {
-      await storageService.deleteMaterial(material.fileUrl);
-      await classroomService.deleteMaterial(material.id);
+      final classroomService = ClassroomService();
 
+      // Delete the file from Supabase Storage
+      await storageService.deleteMaterial(
+        material.fileUrl,
+      );
+
+      // Delete the database row
+      await classroomService.deleteMaterial(
+        material.id,
+      );
+
+      // Refresh the screen immediately so the deleted material disappears
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Material deleted successfully.'),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MaterialsListScreen(
+              classroom: classroom,
+            ),
           ),
         );
       }
@@ -211,16 +254,13 @@ class MaterialsListScreen extends StatelessWidget {
               final material = materials[index];
               final fileColor = _getFileColor(material.fileUrl);
 
-              final currentUser =
-                  context.read<AuthService>().currentUser!;
+              final currentUser = context.read<AuthService>().currentUser!;
 
               // Normalize role to lowercase to handle
               // "Admin", "ADMIN", and "admin".
-              final role =
-                  currentUser.role.name.toLowerCase();
+              final role = currentUser.role.name.toLowerCase();
 
-              final canDelete =
-                  role == 'admin' ||
+              final canDelete = role == 'admin' ||
                   (role == 'instructor' &&
                       material.uploadedBy == currentUser.uid);
 
@@ -230,14 +270,12 @@ class MaterialsListScreen extends StatelessWidget {
                   leading: SizedBox(
                     width: 50,
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor:
-                              fileColor.withOpacity(0.12),
+                          backgroundColor: fileColor.withOpacity(0.12),
                           child: Icon(
                             _getFileIcon(material.fileUrl),
                             color: fileColor,
@@ -260,8 +298,7 @@ class MaterialsListScreen extends StatelessWidget {
                   ),
                   title: Text(material.title),
                   subtitle: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (material.description.isNotEmpty)
                         Text(material.description),
@@ -274,8 +311,7 @@ class MaterialsListScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  isThreeLine:
-                      material.description.isNotEmpty,
+                  isThreeLine: material.description.isNotEmpty,
                   trailing: PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'open') {
@@ -285,8 +321,7 @@ class MaterialsListScreen extends StatelessWidget {
                       }
                     },
                     itemBuilder: (context) {
-                      final items =
-                          <PopupMenuEntry<String>>[
+                      final items = <PopupMenuEntry<String>>[
                         const PopupMenuItem(
                           value: 'open',
                           child: ListTile(
@@ -294,8 +329,7 @@ class MaterialsListScreen extends StatelessWidget {
                               Icons.open_in_new,
                             ),
                             title: Text('Open'),
-                            contentPadding:
-                                EdgeInsets.zero,
+                            contentPadding: EdgeInsets.zero,
                           ),
                         ),
                       ];
@@ -315,8 +349,7 @@ class MaterialsListScreen extends StatelessWidget {
                                   color: Colors.red,
                                 ),
                               ),
-                              contentPadding:
-                                  EdgeInsets.zero,
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
                         );
@@ -325,8 +358,7 @@ class MaterialsListScreen extends StatelessWidget {
                       return items;
                     },
                   ),
-                  onTap: () =>
-                      _openMaterial(context, material),
+                  onTap: () => _openMaterial(context, material),
                 ),
               );
             },
